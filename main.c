@@ -35,7 +35,7 @@ void glcd_rst(void)
 
 //send Data / Control byte to graphic controller
 //dc =1 = data; dc = 0 = control
-void glcd_wr_data(int dc, int data)
+void glcd_write(int dc, int data)
 {
 	if(dc==CONTROL)DISPLAY_CONTROL; else DISPLAY_DATA;//set dc pin according date to be sent
 	PORTD = data;	//set date to be sent
@@ -49,9 +49,14 @@ void glcd_init(void)
 {
 	glcd_rst();	//reset lcd
 	WR_LOW;		//default value for WR /ready to latch data
-	glcd_wr_data(CONTROL, 0b10000001);glcd_wr_data(CONTROL, 0b11110000);	//set elec Volume PM / double command
-	glcd_wr_data(CONTROL, 0b10101111);	//set display enable , grey mode
-	glcd_wr_data(CONTROL, 0b10100101);//set all pixel on
+	glcd_write(CONTROL, 0b00100100);//set temp compensation -0.5% /grad C
+	glcd_write(CONTROL, 0b00101101);//set pump control internal 10x
+	glcd_write(CONTROL, 0b10000100);//partial display control disabled
+	glcd_write(CONTROL, 0b10000110);//interlace scan
+	glcd_write(CONTROL, 0b11101011);//set bias ratio 11
+	glcd_write(CONTROL, 0b10000001);glcd_write(CONTROL, 170);	//set elec Volume PM / double command
+	glcd_write(CONTROL, 0b10101101);	//set display enable , b/w mode
+	//glcd_write(CONTROL, 0b10100101);//set all pixel on
 }
 
 
@@ -70,11 +75,17 @@ int main(void)
 	glcd_rst();		//reset lcd
 	glcd_init();	//initialise lcd
 	
+	
+	glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);//set column to 0
+	glcd_write(CONTROL, 0b01100000);glcd_write(CONTROL, 0b01110000);//set page adress 0
+	glcd_write(CONTROL, 0b10001001);//RAM adddres control /select vertical or horizontal write
+	
 	while(1)
 	{
 	
+	glcd_write(DATA, 0xFF);
 	
-	
+	_delay_ms(10);
 	
 	
 	}//end of while
