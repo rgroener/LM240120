@@ -1,3 +1,17 @@
+/*
+ * 
+ * Library to graphic LCD Display
+ * Resolution:	240 x 120
+ * LCD:			 240120H
+ * Controller:	UC1618T
+ * 
+ * RGroener
+ * Compiler avr-gcc 
+ * 
+ * 
+ * 
+ * 
+ * */
 #define F_CPU 8000000UL
 #include <avr/io.h>
 #include <util/delay.h>
@@ -45,6 +59,42 @@ void glcd_write(int dc, int data)
 	WR_LOW;
 	CS_LOW;			//disable lcd
 }
+
+void glcd_clear_screen(void)
+{
+	uint32_t x=0;
+	
+	for(x=0;x<8200;x++)
+	{
+		glcd_write(DATA, 0x00);
+		//_delay_ms(1);
+	}
+	
+}
+
+void glcd_set_page(uint16_t lcdpage)
+{
+	/*
+	 *lcdpage aufteilung von 16 bits auf 8 bit wenn pa4 gesetzt ist noch nicht gemacht 
+	 * 
+	 * 
+	 * 
+	 */
+	
+	
+	
+	
+	glcd_write(CONTROL, 96+lcdpage);//set page adress 0 (vertical) 96 weil 0b0110xxxx
+	
+	if(lcdpage<15)
+	{
+		glcd_write(CONTROL, 0b01110000);
+	}
+	else//set PA4 when page higher 15
+	{
+		glcd_write(CONTROL, 0b01110001);//set PA4 when page higher 15
+	}
+}
 void glcd_init(void)
 {
 	glcd_rst();	//reset lcd
@@ -56,9 +106,19 @@ void glcd_init(void)
 	glcd_write(CONTROL, 0b11101011);//set bias ratio 11
 	glcd_write(CONTROL, 0b10000001);glcd_write(CONTROL, 170);	//set elec Volume PM / double command
 	glcd_write(CONTROL, 0b10101101);	//set display enable , b/w mode
-	//glcd_write(CONTROL, 0b10100101);//set all pixel on
+	
+	glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);//set column to 0
+	
+	glcd_write(CONTROL, 0b10001001);//RAM adddres control /select vertical or horizontal write
+	glcd_set_page(0);
+	glcd_clear_screen();
 }
 
+
+
+
+
+uint16_t yy,x;
 
 int main(void)
 {
@@ -76,16 +136,32 @@ int main(void)
 	glcd_init();	//initialise lcd
 	
 	
-	glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);//set column to 0
-	glcd_write(CONTROL, 0b01100000);glcd_write(CONTROL, 0b01110000);//set page adress 0
-	glcd_write(CONTROL, 0b10001001);//RAM adddres control /select vertical or horizontal write
 	
+	
+	glcd_clear_screen();
+	
+	for(x=0;x<10;x++)
+	{
+		glcd_set_page(x);
+		
+		for(yy=0;yy<100;yy++)
+		{
+			glcd_write(DATA, 0xFF);
+				//glcd_write(DATA, 0xFF);
+			_delay_ms(20);
+		}
+		glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);//set column to 0
+	}
 	while(1)
 	{
 	
-	glcd_write(DATA, 0xFF);
+			
 	
-	_delay_ms(10);
+	
+	
+	
+	
+	
 	
 	
 	}//end of while
