@@ -33,6 +33,8 @@
 
 #define DATA 	1	
 #define CONTROL 0
+
+
 void glcd_rst(void)
 {
 	
@@ -71,31 +73,40 @@ void glcd_clear_screen(void)
 	}
 	
 }
-void glcd_set_column(uint8_t lcdcolumn)//horizontal
+void glcd_set_column(uint16_t lcdcol)
 {
-	lcdcolumn+=14;//14 = column offset
-	glcd_write(CONTROL, 0x00);glcd_write(CONTROL, lcdcolumn);glcd_write(CONTROL, 0x00);//set column to 0
+	/*set column (1 bit wide) to write data
+	 * 0 ~ 267
+	 */
+	glcd_write(CONTROL, 0x00);//set column address command
+	if(lcdcol<255)
+	{
+		glcd_write(CONTROL, lcdcol+14);//last 8 bits  14=offset column
+		glcd_write(CONTROL, 0);//highest bit of colums value
+	}else
+	{
+		glcd_write(CONTROL, lcdcol-255);//last 8 bits
+		glcd_write(CONTROL, 1);//highest bit of colums value
+	}
 	
 }
-void glcd_set_page(uint16_t lcdpage)//vertical
+void glcd_set_page(uint16_t lcdpage)
 {
-	/*Vertical
-	 *lcdpage aufteilung von 16 bits auf 8 bit wenn pa4 gesetzt ist noch nicht gemacht 
-	 * 
-	 * 
-	 * 
+	/*set page (8 bit high) to write data
+	 * 0 ~ 31?
 	 */
-	glcd_write(CONTROL, 96+lcdpage);//set page adress 0 (vertical) 96 weil 0b0110xxxx
-	
-	if(lcdpage<15)
+	if(lcdpage<16)
 	{
-		glcd_write(CONTROL, 0b01110000);
+		glcd_write(CONTROL, 96+lcdpage);//set page adress 0 (vertical) 96 weil 0b0110xxxx
+		glcd_write(CONTROL, 0b01110000);//PA4 not set
 	}
 	else//set PA4 when page higher 15
 	{
+		glcd_write(CONTROL, 96+lcdpage-16);//set page adress 0 (vertical) 96 weil 0b0110xxxx / -16 weil MSB (PA4) in next bit
 		glcd_write(CONTROL, 0b01110001);//set PA4 when page higher 15
 	}
 }
+
 void glcd_init(void)
 {
 	glcd_rst();	//reset lcd
@@ -106,57 +117,43 @@ void glcd_init(void)
 	glcd_write(CONTROL, 0b10000110);//interlace scan
 	glcd_write(CONTROL, 0b11101011);//set bias ratio 11
 	glcd_write(CONTROL, 0b10000001);glcd_write(CONTROL, 170);	//set elec Volume PM / double command
-	glcd_write(CONTROL, 0b10101101);	//set display enable , b/w mode
-	glcd_write(CONTROL, 0b10010101);
-	
-	glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);//set column to 0
-	
 	glcd_write(CONTROL, 0b10001001);//RAM adddres control /select vertical or horizontal write
+	glcd_write(CONTROL, 0b10101101);	//set display enable , b/w mode
+	
+	
+	/*glcd_write(CONTROL, 0b11111001);//window program enable
+	
+	glcd_write(CONTROL, 0b11110100);//set window program staring column address
+	glcd_write(CONTROL, 14);//window starting at column 0
+	glcd_write(CONTROL, 0);//last bit of column data
+	
+	
+	
+	glcd_write(CONTROL, 0b11110101);//set window program starting page address
+	glcd_write(CONTROL, 0);//window starting at page 0
+	
+	glcd_write(CONTROL, 0b11110110);//set window program ending column address
+	glcd_write(CONTROL, 254);//window ending at column
+	glcd_write(CONTROL, 0);//last bit of column data
+	
+	glcd_write(CONTROL, 0b11110111);//set window program ending page address
+	glcd_write(CONTROL, 31);//window ending at page 31
+	* 
+	* */
+	
+	//glcd_write(CONTROL, 0b11000010);//
+	
+	
+	
+	
+	
 	glcd_set_page(0);
+	glcd_set_column(0);
 	glcd_clear_screen();
 }
 
-void glcd_draw_bit(uint16_t col, uint8_t pag, uint8_t color)
-{
-	uint8_t lcddata=0;
-	uint8_t vor=0;
-	uint8_t nach=0;
-	
-	vor = pag/8;
-	if(vor==0)
-	{
-		nach = pag;
-	}else nach = pag-(vor*8);
-	
-	
-	
-	switch(nach)//-1 weil start bei bit 0 und nicht bit 1
-	{
-		case 0:	lcddata |= 0x01;
-				break;
-		case 1:	lcddata |= 0x02;
-				break;
-		case 2:	lcddata |= 0x04;
-				break;
-		case 3:	lcddata |= 0x08;
-				break;
-		case 4:	lcddata |= 0x10;
-				break;
-		case 5:	lcddata |= 0x20;
-				break;
-		case 6:	lcddata |= 0x40;
-				break;
-		case 7:	lcddata |= 0x80;
-				break;
-	}
-	glcd_set_page(vor);
-	glcd_set_column(col);
-	glcd_write(DATA, lcddata);
-}
 
-
-uint8_t test;
-uint16_t yy,x,xx;
+uint16_t yy,x;
 
 int main(void)
 {
@@ -174,39 +171,26 @@ int main(void)
 	glcd_init();	//initialise lcd
 	
 	
-	test=0;
+	
 	
 	glcd_clear_screen();
 	
-	/*glcd_draw_bit(200,0,1);
-	_delay_ms(200);
-	glcd_draw_bit(201,1,1);
-	_delay_ms(200);
-	glcd_draw_bit(202,2,1);
-	_delay_ms(200);
-	glcd_draw_bit(203,3,1);
-	_delay_ms(200);
-	glcd_draw_bit(204,4,1);
-	_delay_ms(200);
-	glcd_draw_bit(205,5,1);
-	_delay_ms(200);
-	glcd_draw_bit(206,6,1);
-	_delay_ms(200);
-	glcd_draw_bit(207,7,1);
-	_delay_ms(200);
-	glcd_draw_bit(208,8,1);
-	_delay_ms(200);
-	glcd_draw_bit(209,9,1);
-	_delay_ms(200);*/
 	
-	for(xx=0;xx<120;xx++)
+	glcd_set_page(0);
+	glcd_set_column(200);
+	for(x=0;x<1000;x++)
 	{
-		glcd_draw_bit(xx,xx,1);
-		_delay_ms(200);
-	}
-			
+		glcd_write(DATA, 200);
+	}		
+
 		
-		//glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);glcd_write(CONTROL, 0x00);//set column to 0
+		
+	
+	
+	
+	
+	
+	
 	
 	while(1)
 	{
