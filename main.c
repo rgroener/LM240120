@@ -542,14 +542,46 @@ void glcd_draw_pixel(uint8_t x, uint8_t y)
 void glcd_vline(uint8_t x, uint8_t ystart, uint8_t yend)
 {
 	/*
-	 * 
+	 * draw vertical line
 	 * */
-	 
-	glcd_goto_xy(x,ystart);		//select right byte
 	do{
 		glcd_draw_pixel(x,ystart);
 		ystart++;
-	}while(ystart!=(yend+1));	//do until yend reached
+	}while(ystart!=(yend+1));	
+}
+void glcd_hline(uint8_t xstart, uint8_t y, uint8_t xend)
+{
+	/*
+	 * horizontal line
+	 * */
+	do{
+		glcd_draw_pixel(xstart,y);
+		xstart++;
+	}while(xstart!=(xend+1));	
+}
+void glcd_line(uint8_t xstart, uint8_t ystart, uint8_t xend, uint8_t yend)
+{
+	/*
+	 * Bresenham algorithn
+	*/
+	int dx = abs(xend-xstart), sx = xstart < xend ? 1 : -1;
+	int dy = abs(yend -ystart), sy = ystart < yend ? 1 : -1;
+	int err = (dx>dy ? dx : -dy)/2, e2;
+	for(;;)
+	{
+		glcd_draw_pixel(xstart, ystart);
+		if(xstart==xend && ystart == yend) break;
+		e2 = err;
+		if(e2 >- dx) {err -= dy; xstart += sx;}
+		if(e2 < dy) {err += dx; ystart += sy;}
+	}
+}
+void glcd_rect(uint8_t xstart, uint8_t ystart, uint8_t xend, uint8_t yend)
+{
+	glcd_vline(xstart,ystart,yend);
+	glcd_vline(xend,ystart,yend);
+	glcd_hline(xstart,ystart, xend);
+	glcd_hline(xstart,yend, xend);
 }
 
 int main(void)
@@ -569,9 +601,27 @@ int main(void)
 	glcd_clear_screen();
 	
 
+	glcd_goto_xy(100,14);
+		glcd_write_string("Hallo");
+		
+		glcd_draw_pixel(160,115);
 	
+	glcd_vline(5,80,120);
 	
-	glcd_vline(5,0,100);
+	glcd_hline(0,80,50);
+	/*
+	uint8_t x=0;
+	for(x=0;x<120;x++)
+	{
+		//glcd_hline(0,x,50);
+		_delay_ms(500);
+		
+	}*/
+	
+	glcd_line(0,10,20,89);
+	glcd_line(0,10,220,120);
+	
+	glcd_rect(20,5,100,110);
 	while(1)
 	{
 	
