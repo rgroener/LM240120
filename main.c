@@ -582,7 +582,77 @@ void glcd_rect(uint8_t xstart, uint8_t ystart, uint8_t xend, uint8_t yend)
 	glcd_vline(xend,ystart,yend);
 	glcd_hline(xstart,ystart, xend);
 	glcd_hline(xstart,yend, xend);
+
 }
+void glcd_rect_fill(uint8_t xstart, uint8_t ystart, uint8_t xend, uint8_t yend)
+{
+	do{
+		glcd_vline(xstart,ystart,yend);
+		xstart++;
+	}while(xstart!=(xend+1));	
+	
+}
+void glcd_circle_quadrant(uint8_t xpos, uint8_t ypos, uint8_t radius, uint8_t quad)
+{
+	/*draws circle quadrants centered at x,y with given radius & color
+	 * quad is a bit-encoded representation of which cartesian quadrants to draw.
+	 * 
+	 * bit 0: draw quadrant I (lower right)
+	 * bit 1: draw quadrant IV(uper right)
+	 * bit 2: draw quadrant II (lower left)
+	 * bit 3: draw quadrant III (upper left)
+	 * 
+	 * At the moment up to radius 46... to be solved
+	 * 
+	 * */
+	 int x, xEnd = (707*radius)/1000+1;
+	 for (x=0;x<xEnd;x++)
+	 {
+		 int y = (int) sqrt(radius*radius - x*x);
+		 
+		 if(quad & 0x01)
+		 {
+			 glcd_draw_pixel(xpos+x,ypos+y);
+			 glcd_draw_pixel(xpos+y,ypos+x);
+		 }
+		 
+		 if(quad & 0x02)
+		 {
+			 glcd_draw_pixel(xpos+x,ypos-y);
+			 glcd_draw_pixel(xpos+y,ypos-x);
+		 }
+		 
+		 if(quad & 0x04)
+		 {
+			 glcd_draw_pixel(xpos-x,ypos+y);
+			 glcd_draw_pixel(xpos-y,ypos+x);
+		 }
+		 
+		 if(quad & 0x08)
+		 {
+			 glcd_draw_pixel(xpos-x,ypos-y);
+			 glcd_draw_pixel(xpos-y,ypos-x);
+		 }
+	 }//end of for
+}//end of circle quadrant
+void glcd_circle(uint8_t xpos, uint8_t ypos, uint8_t radius)
+{
+	glcd_circle_quadrant(xpos,ypos, radius, 0x01);
+}
+void glcd_round_rect(uint8_t xstart, uint8_t ystart, uint8_t xend, uint8_t yend, uint8_t r)
+// draws a rounded rectangle with corner radius r.
+// coordinates: top left = x0,y0; bottom right = x1,y1
+{
+	glcd_hline(xstart+r,ystart, xend - r);	// top side
+	glcd_hline(xstart+r,yend, xend - r);	// bottom side
+	glcd_vline(xstart,ystart+r,yend - r);	// left side
+	glcd_vline(xend,ystart+r,yend - r);	// right side
+	glcd_circle_quadrant(xstart+r,ystart+r,r,8);	// upper left corner
+	glcd_circle_quadrant(xend - r,ystart+r,r,2);	// upper right corner
+	glcd_circle_quadrant(xstart+r,yend - r,r,4);	// lower left corner
+	glcd_circle_quadrant(xend - r,yend - r,r,1);// lower right corner
+}
+
 
 int main(void)
 {
@@ -595,33 +665,19 @@ int main(void)
 	
 	DDRB |= (1<<PB0);
 	PORTB |= (1<<PB0);
-	//_delay_ms(5);	//delay for lcd to be stable
+	
 	glcd_rst();		//reset lcd
 	glcd_init();	//initialise lcd
 	glcd_clear_screen();
+	uint16_t y=0;
+	uint8_t x;
+for(x=0;x<60;x++)
+{
+	y+=3;
 	
-
-	glcd_goto_xy(100,14);
-		glcd_write_string("Hallo");
-		
-		glcd_draw_pixel(160,115);
-	
-	glcd_vline(5,80,120);
-	
-	glcd_hline(0,80,50);
-	/*
-	uint8_t x=0;
-	for(x=0;x<120;x++)
-	{
-		//glcd_hline(0,x,50);
-		_delay_ms(500);
-		
-	}*/
-	
-	glcd_line(0,10,20,89);
-	glcd_line(0,10,220,120);
-	
-	glcd_rect(20,5,100,110);
+	//_delay_ms(200);
+}
+glcd_round_rect(50,20,100,50,2);
 	while(1)
 	{
 	
