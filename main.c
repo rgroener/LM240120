@@ -330,7 +330,6 @@ void glcd_write(int dc, int data)
 	WR_HIGH;		//latch data into controller	
 	CS_LOW;			//disable lcd
 }
-
 uint8_t glcd_read(void)
 {
 	/*
@@ -355,7 +354,6 @@ uint8_t glcd_read(void)
 	uint8_t val=PIND;	//Read data from PortD
 	return val;
 }//end of glcd_read
-
 void glcd_clear_screen(void)
 {
 	uint32_t x=0;
@@ -541,7 +539,18 @@ void glcd_draw_pixel(uint8_t x, uint8_t y)
 	glcd_goto_xy(x,page);		//select right byte
 	glcd_write_byte(temp_bit);	//write modified byte back to SRAM
 }
-
+void glcd_vline(uint8_t x, uint8_t ystart, uint8_t yend)
+{
+	/*
+	 * 
+	 * */
+	 
+	glcd_goto_xy(x,ystart);		//select right byte
+	do{
+		glcd_draw_pixel(x,ystart);
+		ystart++;
+	}while(ystart!=(yend+1));	//do until yend reached
+}
 
 int main(void)
 {
@@ -559,16 +568,10 @@ int main(void)
 	glcd_init();	//initialise lcd
 	glcd_clear_screen();
 	
-	//uint8_t test=0;
-	uint16_t x=0;
-	uint8_t ff=0;
+
 	
-for(x=0;x<100;x++)
-{
-	glcd_draw_pixel(0,x);
-	_delay_ms(20);
-}
 	
+	glcd_vline(5,0,100);
 	while(1)
 	{
 	
